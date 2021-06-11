@@ -239,6 +239,7 @@ resource "azurerm_public_ip" "fw1-mgnt-pip" {
   sku                 = "Standard"   
 }
 
+# PIP is not need for on untrust NIC for an Ingress FW, frontend by a LB.
 resource "azurerm_public_ip" "fw1-untrust-pip" {
   name                = var.az-untrust-pip
   location            = azurerm_resource_group.fw1-rg.location
