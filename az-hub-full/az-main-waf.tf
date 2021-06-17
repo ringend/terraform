@@ -111,7 +111,8 @@ variable "az-waf-size" {
 
 # Change SKU based on which license is selected. 
 variable "az-waf-sku" {
-  default = "f5-bigip-virtual-edition-1g-good-hourly"
+  default = "f5-bigip-virtual-edition-200m-good-hourly"
+  #default = "f5-bigip-virtual-edition-1g-good-hourly"
 }
 
 ###### End of Variables #######
@@ -141,7 +142,7 @@ resource "azurerm_subnet" "waf-mgnt-subnet" {
 resource "azurerm_network_security_group" "waf-untrust-nsg" {
   name                = var.az-waf-untrust-nsg
   location            = azurerm_resource_group.vnet-rg.location
-  resource_group_name = azurerm_resource_group.vnet-rg.name
+  resource_group_name = azurerm_resource_group.waf-rg.name
   security_rule {
     name                       = "allow-all"
     priority                   = 100
@@ -157,7 +158,7 @@ resource "azurerm_network_security_group" "waf-untrust-nsg" {
 resource "azurerm_network_security_group" "waf-trust-nsg" {
   name                = var.az-waf-trust-nsg
   location            = azurerm_resource_group.vnet-rg.location
-  resource_group_name = azurerm_resource_group.vnet-rg.name
+  resource_group_name = azurerm_resource_group.waf-rg.name
   security_rule {
     name                       = "allow-all"
     priority                   = 100
@@ -173,7 +174,7 @@ resource "azurerm_network_security_group" "waf-trust-nsg" {
 resource "azurerm_network_security_group" "waf-mgnt-nsg" {
   name                = var.az-waf-mgnt-nsg
   location            = azurerm_resource_group.vnet-rg.location
-  resource_group_name = azurerm_resource_group.vnet-rg.name
+  resource_group_name = azurerm_resource_group.waf-rg.name
   security_rule {
     name                       = "allow-all"
     priority                   = 100

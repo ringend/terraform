@@ -137,7 +137,7 @@ resource "azurerm_subnet" "ifw-mgnt-subnet" {
 resource "azurerm_network_security_group" "ifw-untrust-nsg" {
   name                = var.az-ifw-untrust-nsg
   location            = azurerm_resource_group.vnet-rg.location
-  resource_group_name = azurerm_resource_group.vnet-rg.name
+  resource_group_name = azurerm_resource_group.ifw-rg.name
   security_rule {
     name                       = "allow-all"
     priority                   = 100
@@ -153,7 +153,7 @@ resource "azurerm_network_security_group" "ifw-untrust-nsg" {
 resource "azurerm_network_security_group" "ifw-trust-nsg" {
   name                = var.az-ifw-trust-nsg
   location            = azurerm_resource_group.vnet-rg.location
-  resource_group_name = azurerm_resource_group.vnet-rg.name
+  resource_group_name = azurerm_resource_group.ifw-rg.name
   security_rule {
     name                       = "allow-all"
     priority                   = 100
@@ -169,7 +169,7 @@ resource "azurerm_network_security_group" "ifw-trust-nsg" {
 resource "azurerm_network_security_group" "ifw-mgnt-nsg" {
   name                = var.az-ifw-mgnt-nsg
   location            = azurerm_resource_group.vnet-rg.location
-  resource_group_name = azurerm_resource_group.vnet-rg.name
+  resource_group_name = azurerm_resource_group.ifw-rg.name
   security_rule {
     name                       = "allow-all"
     priority                   = 100

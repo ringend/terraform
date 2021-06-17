@@ -1,4 +1,6 @@
-
+/*
+Create Azure Public Load Balancer for Web Application Firewall NVA
+*/
 
 # Varibles for waflb
 variable "az-waflb" {

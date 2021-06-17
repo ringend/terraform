@@ -1,5 +1,6 @@
-
-
+/*
+Create Azure Internal Load Balancer for Egress Firewall NVA
+*/
 
 # Varibles for eglb
 variable "az-eglb" {

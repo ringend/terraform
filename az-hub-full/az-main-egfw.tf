@@ -144,8 +144,8 @@ resource "azurerm_subnet" "efw-mgnt-subnet" {
 # Create Network Security Groups
 resource "azurerm_network_security_group" "efw-untrust-nsg" {
   name                = var.az-efw-untrust-nsg
-  location            = azurerm_resource_group.vnet-rg.location
-  resource_group_name = azurerm_resource_group.vnet-rg.name
+  location            = azurerm_resource_group.efw-rg.location
+  resource_group_name = azurerm_resource_group.efw-rg.name
   security_rule {
     name                       = "allow-all"
     priority                   = 100
@@ -160,8 +160,8 @@ resource "azurerm_network_security_group" "efw-untrust-nsg" {
 }
 resource "azurerm_network_security_group" "efw-trust-nsg" {
   name                = var.az-efw-trust-nsg
-  location            = azurerm_resource_group.vnet-rg.location
-  resource_group_name = azurerm_resource_group.vnet-rg.name
+  location            = azurerm_resource_group.efw-rg.location
+  resource_group_name = azurerm_resource_group.efw-rg.name
   security_rule {
     name                       = "allow-all"
     priority                   = 100
@@ -176,8 +176,8 @@ resource "azurerm_network_security_group" "efw-trust-nsg" {
 }
 resource "azurerm_network_security_group" "efw-mgnt-nsg" {
   name                = var.az-efw-mgnt-nsg
-  location            = azurerm_resource_group.vnet-rg.location
-  resource_group_name = azurerm_resource_group.vnet-rg.name
+  location            = azurerm_resource_group.efw-rg.location
+  resource_group_name = azurerm_resource_group.efw-rg.name
   security_rule {
     name                       = "allow-all"
     priority                   = 100

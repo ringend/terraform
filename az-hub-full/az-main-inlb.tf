@@ -1,4 +1,6 @@
-
+/*
+Create Azure Public Load Balancer for Ingress Firewall NVA
+*/
 
 
 # Varibles for inlb
