@@ -8,6 +8,8 @@ Using the AzCLI, accept Marketplace the offer terms prior to deployment.
 This only need to be done once per subscription
 ```
 az vm image terms accept --urn paloaltonetworks:vmseries1:bundle2:latest
+or
+az vm image terms accept --urn paloaltonetworks:vmseries1:byol:latest
 ```
 To see options other Markerplace offerings:
 az vm image list --all --publisher paloaltonetworks --offer vmseries --output table
@@ -102,13 +104,13 @@ variable "az-ifw2-disk-name" {
 }
 
 variable "az-ifw-size" {
-  default = "Standard_D3_v2"
+  default = "Standard_DS3_v2"
 }
 
 # To use a pay as you go license set name to "bundle1" or "bundle2"
 # To use a purchased license change name to "byol"
 variable "az-ifw-sku" {
-  default = "bundle1"
+  default = "byol"
 }
 
 ###### End of Variables #######
@@ -143,7 +145,7 @@ resource "azurerm_network_security_group" "ifw-untrust-nsg" {
     priority                   = 100
     direction                  = "Inbound"
     access                     = "Allow"
-    protocol                   = "Tcp"
+    protocol                   = "*"
     source_port_range          = "*"
     destination_port_range     = "*"
     source_address_prefix      = "*"
@@ -155,14 +157,14 @@ resource "azurerm_network_security_group" "ifw-trust-nsg" {
   location            = azurerm_resource_group.vnet-rg.location
   resource_group_name = azurerm_resource_group.ifw-rg.name
   security_rule {
-    name                       = "allow-all"
+    name                       = "icmp-in"
     priority                   = 100
     direction                  = "Inbound"
     access                     = "Allow"
-    protocol                   = "Tcp"
+    protocol                   = "ICMP"
     source_port_range          = "*"
     destination_port_range     = "*"
-    source_address_prefix      = "*"
+    source_address_prefix      = "10.0.0.0/8"
     destination_address_prefix = "*"
   }
 }
@@ -171,11 +173,11 @@ resource "azurerm_network_security_group" "ifw-mgnt-nsg" {
   location            = azurerm_resource_group.vnet-rg.location
   resource_group_name = azurerm_resource_group.ifw-rg.name
   security_rule {
-    name                       = "allow-all"
+    name                       = "Deny-all"
     priority                   = 100
     direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
+    access                     = "Deny"
+    protocol                   = "*"
     source_port_range          = "*"
     destination_port_range     = "*"
     source_address_prefix      = "*"

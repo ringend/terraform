@@ -10,8 +10,8 @@ variable "az-inlb" {
     "name"            = "aan-tf-inlb"
     "feip-name"       = "aan-inlb-fe-ip"  #Front-end IP name
     "feip-pip-name"   = "aan-inlb-fe-pip"  #Front-end IP name
-    "be-pool-adx1"    = "10.100.11.5" #Back-end pool fw1-untrust-nic-ip
-    "be-pool-adx2"    = "10.100.11.6" #Back-end pool fw2-untrust-nic-ip
+    "be-pool-inlbadx1"    = "10.100.10.5" #Back-end pool fw1-external-nic-ip
+    "be-pool-inlbadx2"    = "10.100.10.6" #Back-end pool fw2-external-nic-ip
   }
 }
 
@@ -40,32 +40,26 @@ resource "azurerm_lb" "inlb" {
   }
 }
 
-
 # Create Backend Pool and addresses for inlb
 resource "azurerm_lb_backend_address_pool" "inlb-be-pool" {
   name                = "inlb-be-pool-1"
   loadbalancer_id     = azurerm_lb.inlb.id
   depends_on          = [azurerm_lb.inlb]
-
-/* #Not working
-  backend_address     {
-    name               = "ifw1"
-    virtual_network_id = azurerm_subnet.ifw-untrust-subnet.id
-    ip_address         = var.az-inlb["be-pool-adx1"]
-  }
-*/
 }
 
-/* #Not Working
-resource "azurerm_lb_backend_address_pool_address" "adx1" {
-  name                    = "ifw1-trust"
-  backend_address_pool_id = azurerm_lb_backend_address_pool.inlb-be-pool.id
-  virtual_network_id      = azurerm_subnet.ifw-untrust-subnet.id
-  ip_address              = "10.100.11.5"
-  #ip_address              = var.az-inlb["be-pool-adx1"]
+resource "azurerm_lb_backend_address_pool_address" "inlbadx1" {
+  name                    = "infw1-untrust"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.eglb-be-pool.id
+  virtual_network_id      = azurerm_virtual_network.main-vnet.id
+  ip_address              = var.az-inlb["be-pool-inlbadx1"]
 }
-*/
 
+resource "azurerm_lb_backend_address_pool_address" "inlbadx2" {
+  name                    = "infw2-untrust"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.eglb-be-pool.id
+  virtual_network_id      = azurerm_virtual_network.main-vnet.id
+  ip_address              = var.az-inlb["be-pool-inlbadx2"]
+}
 
 # Create Health Probe for inlb
 resource "azurerm_lb_probe" "inlb-probe" {

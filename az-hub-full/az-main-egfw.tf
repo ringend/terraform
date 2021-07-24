@@ -8,6 +8,8 @@ Using the AzCLI, accept Marketplace the offer terms prior to deployment.
 This only need to be done once per subscription
 ```
 az vm image terms accept --urn paloaltonetworks:vmseries1:bundle2:latest
+or
+az vm image terms accept --urn paloaltonetworks:vmseries1:byol:latest
 ```
 To see options other Markerplace offerings:
 az vm image list --all --publisher paloaltonetworks --offer vmseries --output table
@@ -110,13 +112,13 @@ variable "az-efw2-disk-name" {
 }
 
 variable "az-efw-size" {
-  default = "Standard_D3_v2"
+  default = "Standard_DS3_v2"
 }
 
 # To use a pay as you go license set name to "bundle1" or "bundle2"
 # To use a purchased license change name to "byol"
 variable "az-efw-sku" {
-  default = "bundle1"
+  default = "byol"
 }
 
 ###### End of Variables #######
@@ -147,11 +149,11 @@ resource "azurerm_network_security_group" "efw-untrust-nsg" {
   location            = azurerm_resource_group.efw-rg.location
   resource_group_name = azurerm_resource_group.efw-rg.name
   security_rule {
-    name                       = "allow-all"
+    name                       = "Deny-all"
     priority                   = 100
     direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
+    access                     = "Deny"
+    protocol                   = "*"
     source_port_range          = "*"
     destination_port_range     = "*"
     source_address_prefix      = "*"
@@ -167,10 +169,10 @@ resource "azurerm_network_security_group" "efw-trust-nsg" {
     priority                   = 100
     direction                  = "Inbound"
     access                     = "Allow"
-    protocol                   = "Tcp"
+    protocol                   = "*"
     source_port_range          = "*"
     destination_port_range     = "*"
-    source_address_prefix      = "*"
+    source_address_prefix      = "10.0.0.0/8"
     destination_address_prefix = "*"
   }
 }
@@ -179,11 +181,44 @@ resource "azurerm_network_security_group" "efw-mgnt-nsg" {
   location            = azurerm_resource_group.efw-rg.location
   resource_group_name = azurerm_resource_group.efw-rg.name
   security_rule {
-    name                       = "allow-all"
-    priority                   = 100
+    name                       = "ssh-in"
+    priority                   = 110
     direction                  = "Inbound"
     access                     = "Allow"
-    protocol                   = "Tcp"
+    protocol                   = "tcp"
+    source_port_range          = "*"
+    destination_port_range     = "22"
+    source_address_prefix      = "10.0.0.0/8"
+    destination_address_prefix = "*"
+  }
+  security_rule {
+    name                       = "https-in"
+    priority                   = 120
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "tcp"
+    source_port_range          = "*"
+    destination_port_range     = "443"
+    source_address_prefix      = "10.0.0.0/8"
+    destination_address_prefix = "*"
+  }
+  security_rule {
+    name                       = "icmp-in"
+    priority                   = 130
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "icmp"
+    source_port_range          = "*"
+    destination_port_range     = "*"
+    source_address_prefix      = "10.0.0.0/8"
+    destination_address_prefix = "*"
+  }
+  security_rule {
+    name                       = "Deny-all"
+    priority                   = 1000
+    direction                  = "Inbound"
+    access                     = "Deny"
+    protocol                   = "*"
     source_port_range          = "*"
     destination_port_range     = "*"
     source_address_prefix      = "*"

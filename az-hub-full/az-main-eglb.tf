@@ -9,8 +9,8 @@ variable "az-eglb" {
     "name" = "aan-tf-eglb"
     "feip-name" = "aan-eglb-fe-ip"  #Front-end IP name
     "feip" = "10.100.1.4"  #Front-end IP address
-    "be-pool-adx1" = "10.100.1.5" #Back-end pool fw1-trust-nic-ip
-    "be-pool-adx2" = "10.100.1.6" #Back-end pool fw2-trust-nic-ip
+    "be-pool-eglbadx1" = "10.100.1.5" #Back-end pool fw1-trust-nic-ip
+    "be-pool-eglbadx2" = "10.100.1.6" #Back-end pool fw2-trust-nic-ip
   }
 }
 
@@ -32,30 +32,26 @@ resource "azurerm_lb" "eglb" {
   }
 }
 
-
 # Create Backend Pool and addresses for eglb
 resource "azurerm_lb_backend_address_pool" "eglb-be-pool" {
   name                = "eglb-be-pool-1"
   loadbalancer_id     = azurerm_lb.eglb.id
   depends_on          = [azurerm_lb.eglb]
-
-/*
-  backend_address     {
-    name               = "efw1"
-    virtual_network_id = azurerm_subnet.efw-trust-subnet.id
-    ip_address         = var.az-eglb["be-pool-adx1"]
-  }
-*/
 }
 
-/*
-resource "azurerm_lb_backend_address_pool_address" "adx1" {
+resource "azurerm_lb_backend_address_pool_address" "eglbadx1" {
   name                    = "efw1-trust"
   backend_address_pool_id = azurerm_lb_backend_address_pool.eglb-be-pool.id
-  virtual_network_id      = azurerm_subnet.efw-trust-subnet.id
-  ip_address              = var.az-eglb["be-pool-adx1"]
+  virtual_network_id      = azurerm_virtual_network.main-vnet.id
+  ip_address              = var.az-eglb["be-pool-eglbadx1"]
 }
-*/
+
+resource "azurerm_lb_backend_address_pool_address" "eglbadx2" {
+  name                    = "efw2-trust"
+  backend_address_pool_id = azurerm_lb_backend_address_pool.eglb-be-pool.id
+  virtual_network_id      = azurerm_virtual_network.main-vnet.id
+  ip_address              = var.az-eglb["be-pool-eglbadx2"]
+}
 
 # Create Health Probe for eglb
 resource "azurerm_lb_probe" "eglb-probe" {

@@ -9,7 +9,7 @@ This only need to be done once per subscription
 ```
  az vm image terms accept --urn f5-networks:f5-big-ip-good:f5-bigip-virtual-edition-200m-good-hourly:latest
 or 
- az vm image terms accept --urn f5-networks:f5-big-ip-good:f5-bigip-virtual-edition-1g-good-hourly:latest
+ az vm image terms accept --urn f5-networks:f5-big-ip-byol:f5-big-all-1slot-byol:latest
 
 ```
 To see options other Markerplace offerings:
@@ -21,8 +21,8 @@ If using availability-sets both VMs have to be in the same resource group
 
 ######## Variables Start #########
 
-variable "az-waf-untrust-nsg" {
-  default = "aan-tf-waf-untrust-nsg"
+variable "az-waf-external-nsg" {
+  default = "aan-tf-waf-external-nsg"
 }
 
 variable "az-waf-trust-nsg" {
@@ -33,7 +33,7 @@ variable "az-waf-mgnt-nsg" {
   default = "aan-tf-waf-mgnt-nsg"
 }
 
-variable "waf-untrust-adx" {
+variable "waf-external-adx" {
   default = ["10.100.20.0/24"]
 }
 
@@ -111,18 +111,19 @@ variable "az-waf-size" {
 
 # Change SKU based on which license is selected. 
 variable "az-waf-sku" {
-  default = "f5-bigip-virtual-edition-200m-good-hourly"
+  default = "f5-big-all-1slot-byol"
+  #default = "f5-bigip-virtual-edition-200m-good-hourly"
   #default = "f5-bigip-virtual-edition-1g-good-hourly"
 }
 
 ###### End of Variables #######
 
 #Create Subnets
-resource "azurerm_subnet" "waf-untrust-subnet" {
-  name                 = "waf-untrust-subnet"
+resource "azurerm_subnet" "waf-external-subnet" {
+  name                 = "waf-external-subnet"
   resource_group_name  = azurerm_resource_group.vnet-rg.name
   virtual_network_name = azurerm_virtual_network.main-vnet.name
-  address_prefixes     = var.waf-untrust-adx
+  address_prefixes     = var.waf-external-adx
 }
 resource "azurerm_subnet" "waf-trust-subnet" {
   name                 = "waf-trust-subnet"
@@ -139,8 +140,8 @@ resource "azurerm_subnet" "waf-mgnt-subnet" {
 
 
 # Create Network Security Groups
-resource "azurerm_network_security_group" "waf-untrust-nsg" {
-  name                = var.az-waf-untrust-nsg
+resource "azurerm_network_security_group" "waf-external-nsg" {
+  name                = var.az-waf-external-nsg
   location            = azurerm_resource_group.vnet-rg.location
   resource_group_name = azurerm_resource_group.waf-rg.name
   security_rule {
@@ -148,7 +149,7 @@ resource "azurerm_network_security_group" "waf-untrust-nsg" {
     priority                   = 100
     direction                  = "Inbound"
     access                     = "Allow"
-    protocol                   = "Tcp"
+    protocol                   = "*"
     source_port_range          = "*"
     destination_port_range     = "*"
     source_address_prefix      = "*"
@@ -160,14 +161,14 @@ resource "azurerm_network_security_group" "waf-trust-nsg" {
   location            = azurerm_resource_group.vnet-rg.location
   resource_group_name = azurerm_resource_group.waf-rg.name
   security_rule {
-    name                       = "allow-all"
+    name                       = "icmp-in"
     priority                   = 100
     direction                  = "Inbound"
     access                     = "Allow"
-    protocol                   = "Tcp"
+    protocol                   = "ICMP"
     source_port_range          = "*"
     destination_port_range     = "*"
-    source_address_prefix      = "*"
+    source_address_prefix      = "10.0.0.0/8"
     destination_address_prefix = "*"
   }
 }
@@ -176,11 +177,11 @@ resource "azurerm_network_security_group" "waf-mgnt-nsg" {
   location            = azurerm_resource_group.vnet-rg.location
   resource_group_name = azurerm_resource_group.waf-rg.name
   security_rule {
-    name                       = "allow-all"
+    name                       = "Deny-all"
     priority                   = 100
     direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
+    access                     = "Deny"
+    protocol                   = "*"
     source_port_range          = "*"
     destination_port_range     = "*"
     source_address_prefix      = "*"
@@ -189,9 +190,9 @@ resource "azurerm_network_security_group" "waf-mgnt-nsg" {
 }
 
 # Create NSG to subnet associations
-resource "azurerm_subnet_network_security_group_association" "waf-untrust-nsg-assoc" {
-  subnet_id                 = azurerm_subnet.waf-untrust-subnet.id
-  network_security_group_id = azurerm_network_security_group.waf-untrust-nsg.id
+resource "azurerm_subnet_network_security_group_association" "waf-external-nsg-assoc" {
+  subnet_id                 = azurerm_subnet.waf-external-subnet.id
+  network_security_group_id = azurerm_network_security_group.waf-external-nsg.id
 }
 resource "azurerm_subnet_network_security_group_association" "waf-trust-nsg-assoc" {
   subnet_id                 = azurerm_subnet.waf-trust-subnet.id
@@ -257,8 +258,8 @@ resource "azurerm_network_interface" "waf1-nic1" {
   enable_accelerated_networking = true
 
   ip_configuration {
-    name                          = "untrust-ip"
-    subnet_id                     = azurerm_subnet.waf-untrust-subnet.id
+    name                          = "external-ip"
+    subnet_id                     = azurerm_subnet.waf-external-subnet.id
     private_ip_address_allocation = "Dynamic"
   }
 }
@@ -296,14 +297,14 @@ resource "azurerm_virtual_machine" "f5-waf1" {
   plan {
     name      = var.az-waf-sku
     publisher = "f5-networks"
-    product   = "f5-big-ip-good"
+    product   = "f5-big-ip-byol"
   }
 
   # to use a pay as you go license set sku to "bundle1" or "bundle2"
   # To use a purchased license change sku to "byol"
   storage_image_reference {
     publisher = "f5-networks"
-    offer     = "f5-big-ip-good"
+    offer     = "f5-big-ip-byol"
     sku       = var.az-waf-sku
     version   = "latest"
   }
@@ -312,7 +313,7 @@ resource "azurerm_virtual_machine" "f5-waf1" {
     name              = var.az-waf1-disk-name
     caching           = "ReadWrite"
     create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
+    managed_disk_type = "Premium_LRS"
   }
 
   os_profile {
@@ -361,8 +362,8 @@ resource "azurerm_network_interface" "waf2-nic1" {
   enable_accelerated_networking = true
 
   ip_configuration {
-    name                          = "untrust-ip"
-    subnet_id                     = azurerm_subnet.waf-untrust-subnet.id
+    name                          = "external-ip"
+    subnet_id                     = azurerm_subnet.waf-external-subnet.id
     private_ip_address_allocation = "Dynamic"
   }
 }
@@ -400,14 +401,14 @@ resource "azurerm_virtual_machine" "f5-waf2" {
   plan {
     name      = var.az-waf-sku
     publisher = "f5-networks"
-    product   = "f5-big-ip-good"
+    product   = "f5-big-ip-byol"
   }
 
   # to use a pay as you go license set sku to "bundle1" or "bundle2"
   # To use a purchased license change sku to "byol"
   storage_image_reference {
     publisher = "f5-networks"
-    offer     = "f5-big-ip-good"
+    offer     = "f5-big-ip-byol"
     sku       = var.az-waf-sku
     version   = "latest"
   }
@@ -416,7 +417,7 @@ resource "azurerm_virtual_machine" "f5-waf2" {
     name              = var.az-waf2-disk-name
     caching           = "ReadWrite"
     create_option     = "FromImage"
-    managed_disk_type = "Standard_LRS"
+    managed_disk_type = "Premium_LRS"
   }
 
   os_profile {
